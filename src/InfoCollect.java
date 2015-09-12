@@ -2,8 +2,11 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JButton;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
+import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JList;
@@ -16,7 +19,10 @@ public class InfoCollect {
 	private JButton btnPause;
 	private JLabel lblState;
 	private JProgressBar bar;
-	private JList listProcess;
+	private JList<String> listProcess;
+	private DefaultListModel<String> listModel;
+	private USamazonCrawler usAmazon;
+	
 
 	/**
 	 * Launch the application.
@@ -39,6 +45,8 @@ public class InfoCollect {
 	 */
 	public InfoCollect() {
 		initialize();
+		usAmazon = new USamazonCrawler(listModel);
+		
 	}
 
 	/**
@@ -46,6 +54,7 @@ public class InfoCollect {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		frame.setTitle("データ収集ツール");
 		frame.setResizable(false);
 		frame.setBounds(100, 100, 545, 353);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -54,24 +63,36 @@ public class InfoCollect {
 		btnStart = new JButton("開始");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				bar.setIndeterminate(true);
+				lblState.setText("データ収集中");
+				usAmazon.processStart();
+				
 			}
 		});
 		btnStart.setBounds(29, 19, 117, 29);
 		frame.getContentPane().add(btnStart);
 		
 		btnPause = new JButton("中断");
+		btnPause.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				bar.setIndeterminate(false);
+				lblState.setText("処理中断中");
+				usAmazon.processPause();
+			}
+		});
 		btnPause.setBounds(158, 19, 117, 29);
 		frame.getContentPane().add(btnPause);
 		
-		lblState = new JLabel("状況");
+		lblState = new JLabel("起動しました");
 		lblState.setBounds(313, 24, 210, 16);
 		frame.getContentPane().add(lblState);
 		
 		bar = new JProgressBar();
-		bar.setBounds(29, 53, 494, 29);
+		bar.setBounds(29, 60, 494, 22);
 		frame.getContentPane().add(bar);
 		
-		listProcess = new JList();
+		listModel = new DefaultListModel<String>(); 
+		listProcess = new JList<String>(listModel);
 		listProcess.setBounds(29, 94, 494, 214);
 		frame.getContentPane().add(listProcess);
 	}
