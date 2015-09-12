@@ -19,11 +19,13 @@ import javax.swing.DefaultListModel;
 public class USamazonCrawler extends Thread {
 	private int signal = 0;
 	private DefaultListModel<String> listModel;
+	private InfoCollect infoCollect;
 
-	public USamazonCrawler(DefaultListModel<String> listModel) {
+	public USamazonCrawler(InfoCollect infoCollect,DefaultListModel<String> listModel) {
 		// TODO 自動生成されたコンストラクター・スタブ
 		this.listModel = listModel;
-		this.start();
+		this.infoCollect = infoCollect;
+		
 
 	}
 
@@ -181,6 +183,8 @@ public class USamazonCrawler extends Thread {
 					String reviewdate = element
 							.getElementsByClass("review-date").get(0).text()
 							.substring(2); // 投稿日
+					
+					
 
 					String vote_help_senten = element
 							.getElementsByClass("helpful-votes-count").get(0)
@@ -237,13 +241,18 @@ public class USamazonCrawler extends Thread {
 	private void saveCustom(String idString) {
 	}
 
-	public void processStart() {
+	synchronized public void processStart() {
 		signal = 1;
 		System.out.println("ccc");
+		infoCollect.bar.setIndeterminate(true);
+		infoCollect.lblState.setText("データ収集中");
+		
 	}
 
-	public void processPause() {
+	synchronized public void processPause() {
 		signal = 0;
+		infoCollect.lblState.setText("処理中断中");
+		infoCollect.bar.setIndeterminate(false);
 	}
 
 }

@@ -17,8 +17,8 @@ public class InfoCollect {
 	private JFrame frame;
 	private JButton btnStart;
 	private JButton btnPause;
-	private JLabel lblState;
-	private JProgressBar bar;
+	JLabel lblState;
+	JProgressBar bar;
 	private JList<String> listProcess;
 	private DefaultListModel<String> listModel;
 	private USamazonCrawler usAmazon;
@@ -45,8 +45,8 @@ public class InfoCollect {
 	 */
 	public InfoCollect() {
 		initialize();
-		usAmazon = new USamazonCrawler(listModel);
-		
+		usAmazon = new USamazonCrawler(this,listModel);
+		usAmazon.start();
 	}
 
 	/**
@@ -63,8 +63,7 @@ public class InfoCollect {
 		btnStart = new JButton("開始");
 		btnStart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				bar.setIndeterminate(true);
-				lblState.setText("データ収集中");
+
 				usAmazon.processStart();
 				
 			}
@@ -75,8 +74,7 @@ public class InfoCollect {
 		btnPause = new JButton("中断");
 		btnPause.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				bar.setIndeterminate(false);
-				lblState.setText("処理中断中");
+	
 				usAmazon.processPause();
 			}
 		});
