@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,19 +14,46 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+
 //import javax.lang.model.util.Elements;
 import javax.swing.DefaultListModel;
+import javax.swing.JLabel;
+import javax.swing.JProgressBar;
 
 public class USamazonCrawler extends Thread {
 	private int signal = 0;
 	private DefaultListModel<String> listModel;
-	private InfoCollect infoCollect;
 
-	public USamazonCrawler(InfoCollect infoCollect,DefaultListModel<String> listModel) {
+	private JProgressBar bar;
+	private JLabel lblState;
+	private String driver;
+	private String server;
+	private String dbname;
+	private String url;
+	private String user;
+	private String password;
+
+	public USamazonCrawler(JProgressBar bar, JLabel lblState,
+			DefaultListModel<String> listModel) {
 		// TODO 自動生成されたコンストラクター・スタブ
 		this.listModel = listModel;
-		this.infoCollect = infoCollect;
-		
+		this.bar = bar;
+		this.lblState = lblState;
+
+		// JDBCドライバの登録
+		driver = "org.postgresql.Driver";
+		// データベースの指定
+		server = "localhost";
+		dbname = "db_usamazon";
+		url = "jdbc:postgresql://" + server + "/" + dbname;
+		user = "postgres";
+		password = "wth050527";
+		try {
+			Class.forName(driver);
+		} catch (ClassNotFoundException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
 
 	}
 
@@ -33,7 +61,7 @@ public class USamazonCrawler extends Thread {
 	public void run() {
 		//
 		while (true) {
-			//System.out.println("bbb");
+			// System.out.println("bbb");
 			System.out.println(signal);
 			if (signal == 1) {
 				System.out.println("aaa");
@@ -56,15 +84,6 @@ public class USamazonCrawler extends Thread {
 		boolean res = true;
 
 		try {
-			// JDBCドライバの登録
-			String driver = "org.postgresql.Driver";
-			// データベースの指定
-			String server = "localhost"; // PostgreSQL サーバ ( IP または ホスト名 )
-			String dbname = "db_usamazon"; // データベース名
-			String url = "jdbc:postgresql://" + server + "/" + dbname;
-			String user = "postgres"; // データベース作成ユーザ名
-			String password = "wth050527"; // データベース作成ユーザパスワード
-			Class.forName(driver);
 			// データベースとの接続
 			Connection con = DriverManager.getConnection(url, user, password);
 			// テーブル照会実行
@@ -120,8 +139,6 @@ public class USamazonCrawler extends Thread {
 		} catch (SQLException e) {
 			System.err.println("SQL failed.");
 			e.printStackTrace();
-		} catch (ClassNotFoundException ex) {
-			ex.printStackTrace();
 		}
 
 		return res;
@@ -154,21 +171,101 @@ public class USamazonCrawler extends Thread {
 		}
 
 		try {
-			// JDBCドライバの登録
-			String driver = "org.postgresql.Driver";
-			// データベースの指定
-			String server = "localhost"; // PostgreSQL サーバ ( IP または ホスト名 )
-			String dbname = "db_usamazon"; // データベース名
-			String url = "jdbc:postgresql://" + server + "/" + dbname;
-			String user = "postgres"; // データベース作成ユーザ名
-			String password = "wth050527"; // データベース作成ユーザパスワード
-			Class.forName(driver);
+			/*
+			 * // JDBCドライバの登録 String driver = "org.postgresql.Driver"; //
+			 * データベースの指定 String server = "localhost"; // PostgreSQL サーバ ( IP または
+			 * ホスト名 ) String dbname = "db_usamazon"; // データベース名 String url =
+			 * "jdbc:postgresql://" + server + "/" + dbname; String user =
+			 * "postgres"; // データベース作成ユーザ名 String password = "wth050527"; //
+			 * データベース作成ユーザパスワード Class.forName(driver);
+			 */
 			// データベースとの接続
 			Connection con = DriverManager.getConnection(url, user, password);
 			// テーブル照会実行
 			Statement stmt = con.createStatement();
-			String sql;
+			String sql = "";
 			ResultSet rs;
+
+			Date date = new Date();
+			listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - " + idString);
+			
+			Elements breadcrumbs = document1.getElementById(
+					"wayfinding-breadcrumbs_feature_div")
+					.getElementsByTag("li");
+			ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
+			for (Element elem : breadcrumbs) {
+				String tmp = elem.text();
+				if (tmp.equals(">") == false) {
+					cats.add(tmp);
+				}
+			}
+			Element entrydate = document1
+					.getElementsByClass("date-first-available").first()
+					.children().last(); // 登録日
+			
+			switch (cats.size()) {
+			case 1:
+				sql = "INSERT INTO item_tbl (asin,cat1,entrydate) VALUES ('"
+						+ idString
+						+ "','"
+						+ cats.get(0)
+						+ "','" + entrydate.text() + "');";
+				break;
+				
+			case 2:
+				sql = "INSERT INTO item_tbl (asin,cat1,cat2,entrydate) VALUES ('"
+						+ idString
+						+ "','"
+						+ cats.get(0)
+						+ "','"
+						+ cats.get(1)
+						+ "','" + entrydate.text() + "');";
+				break;
+				
+			case 3:
+				sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,entrydate) VALUES ('"
+						+ idString
+						+ "','"
+						+ cats.get(0)
+						+ "','"
+						+ cats.get(1)
+						+ "','"
+						+ cats.get(2)
+						+ "','" + entrydate.text() + "');";
+				break;
+			case 4:
+				sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,entrydate) VALUES ('"
+						+ idString
+						+ "','"
+						+ cats.get(0)
+						+ "','"
+						+ cats.get(1)
+						+ "','"
+						+ cats.get(2)
+						+ "','"
+						+ cats.get(3)
+						+ "','"
+						+ entrydate.text() + "');";
+				break;
+			case 5:
+				sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,cat5,entrydate) VALUES ('"
+						+ idString
+						+ "','"
+						+ cats.get(0)
+						+ "','"
+						+ cats.get(1)
+						+ "','"
+						+ cats.get(2)
+						+ "','"
+						+ cats.get(3)
+						+ "','"
+						+ cats.get(4) + "','" + entrydate.text() + "');";
+				break;
+			default:
+				break;
+			}
+			
+			rs = stmt.executeQuery(sql);
 
 			for (Document d : revpagelist) {
 
@@ -183,12 +280,12 @@ public class USamazonCrawler extends Thread {
 					String reviewdate = element
 							.getElementsByClass("review-date").get(0).text()
 							.substring(2); // 投稿日
-					
-					
 
 					String vote_help_senten = element
 							.getElementsByClass("helpful-votes-count").get(0)
 							.text();
+					
+					listModel.add(0, date.toString() + "Amazon.comから取得:レビュー - " + reviewid);
 
 					Pattern p = Pattern.compile("[0-9]+");
 					Matcher m = p.matcher(vote_help_senten);
@@ -233,8 +330,6 @@ public class USamazonCrawler extends Thread {
 		} catch (SQLException e) {
 			System.err.println("SQL failed.");
 			e.printStackTrace();
-		} catch (ClassNotFoundException ex) {
-			ex.printStackTrace();
 		}
 	}
 
@@ -244,15 +339,15 @@ public class USamazonCrawler extends Thread {
 	synchronized public void processStart() {
 		signal = 1;
 		System.out.println("ccc");
-		infoCollect.bar.setIndeterminate(true);
-		infoCollect.lblState.setText("データ収集中");
-		
+		bar.setIndeterminate(true);
+		lblState.setText("データ収集中");
+
 	}
 
 	synchronized public void processPause() {
 		signal = 0;
-		infoCollect.lblState.setText("処理中断中");
-		infoCollect.bar.setIndeterminate(false);
+		lblState.setText("処理中断中");
+		bar.setIndeterminate(false);
 	}
 
 }

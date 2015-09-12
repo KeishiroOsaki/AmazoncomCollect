@@ -45,7 +45,7 @@ public class InfoCollect {
 	 */
 	public InfoCollect() {
 		initialize();
-		usAmazon = new USamazonCrawler(this,listModel);
+		usAmazon = new USamazonCrawler(bar,lblState,listModel);
 		usAmazon.start();
 	}
 
