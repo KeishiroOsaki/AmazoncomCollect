@@ -191,6 +191,8 @@ public class USamazonCrawler extends Thread {
 											+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
 											+ (i + 1)).followRedirects(true)
 							.timeout(10000).userAgent("Mozilla/5.0").get());
+			listModel.add(0, "レビューページ@アイテム取得中：" + idString + "(" + (i + 1)
+					+ "/" + Math.ceil(totalReviewCount * 0.1) + ")");
 		}
 
 		try {
@@ -280,14 +282,14 @@ public class USamazonCrawler extends Thread {
 					switch (cats.size()) {
 					case 0:
 						sql = "INSERT INTO item_tbl (asin,producttitle) VALUES ('"
-								+ idString + "','" + productTitle + "');";
+								+ idString + "',E'" + productTitle + "');";
 						break;
 					case 1:
 						sql = "INSERT INTO item_tbl (asin,cat1,producttitle) VALUES ('"
 								+ idString
 								+ "','"
 								+ cats.get(0)
-								+ "','"
+								+ "',E'"
 								+ productTitle + "');";
 						break;
 
@@ -297,7 +299,7 @@ public class USamazonCrawler extends Thread {
 								+ "','"
 								+ cats.get(0)
 								+ "','"
-								+ cats.get(1) + "','" + productTitle + "');";
+								+ cats.get(1) + "',E'" + productTitle + "');";
 						break;
 
 					case 3:
@@ -309,7 +311,7 @@ public class USamazonCrawler extends Thread {
 								+ cats.get(1)
 								+ "','"
 								+ cats.get(2)
-								+ "','"
+								+ "',E'"
 								+ productTitle + "');";
 						break;
 					case 4:
@@ -322,7 +324,7 @@ public class USamazonCrawler extends Thread {
 								+ "','"
 								+ cats.get(2)
 								+ "','"
-								+ cats.get(3) + "','"
+								+ cats.get(3) + "',E'"
 
 								+ productTitle + "');";
 						break;
@@ -339,7 +341,7 @@ public class USamazonCrawler extends Thread {
 								+ cats.get(3)
 								+ "','"
 								+ cats.get(4)
-								+ "','"
+								+ "',E'"
 								+ productTitle + "');";
 						break;
 					/*
@@ -359,84 +361,89 @@ public class USamazonCrawler extends Thread {
 
 					Elements tmpElements = d.getElementsByClass("review");
 					for (Element element : tmpElements) {
-						int rating = Character.getNumericValue(element
-								.getElementsByClass("a-icon-alt").get(0).text()
-								.charAt(0)); // 星の数
-						String customer = element.getElementsByClass("author")
-								.get(0).attr("href").split("/")[4]; // 投稿者ID
-						String reviewid = element.attr("id"); // レビューID
-						String reviewdate = element
-								.getElementsByClass("review-date").get(0)
-								.text().substring(2); // 投稿日
+						try {
+							int rating = Character.getNumericValue(element
+									.getElementsByClass("a-icon-alt").get(0)
+									.text().charAt(0)); // 星の数
+							String customer = element
+									.getElementsByClass("author").get(0)
+									.attr("href").split("/")[4]; // 投稿者ID
+							String reviewid = element.attr("id"); // レビューID
+							String reviewdate = element
+									.getElementsByClass("review-date").get(0)
+									.text().substring(2); // 投稿日
 
-						String vote_help_senten = element
-								.getElementsByClass("helpful-votes-count")
-								.get(0).text();
+							String vote_help_senten = element
+									.getElementsByClass("helpful-votes-count")
+									.get(0).text();
 
-						listModel.add(0, date.toString()
-								+ "Amazon.comから取得:レビュー - " + reviewid);
-						int helpful = 0;
-						int votes = 0;
+							listModel.add(0, date.toString()
+									+ "Amazon.comから取得:レビュー - " + reviewid);
+							int helpful = 0;
+							int votes = 0;
 
-						if (vote_help_senten.trim().equals("") == false) {
-							Pattern p = Pattern.compile("[0-9]+");
-							Matcher m = p.matcher(vote_help_senten);
+							if (vote_help_senten.trim().equals("") == false) {
+								Pattern p = Pattern.compile("[0-9]+");
+								Matcher m = p.matcher(vote_help_senten);
 
-							m.find();
-							helpful = Integer.parseInt(m.group()); // 役立ち人数
-							m.find();
-							votes = Integer.parseInt(m.group()); // 投票総数
-						}
+								m.find();
+								helpful = Integer.parseInt(m.group()); // 役立ち人数
+								m.find();
+								votes = Integer.parseInt(m.group()); // 投票総数
+							}
 
-						// 作業リストに存在するか検査
-						Boolean redun1 = false;
-						stmt = con.createStatement();
-						sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
-								+ customer + "';";
-						rs = stmt.executeQuery(sql);
-						rs.next();
-						if (rs.getInt(1) != 0) {
-							redun1 = true;
-						}
-
-						// 重複なければテーブル書き込み実行
-						if (redun1 == false) {
+							// 作業リストに存在するか検査
+							Boolean redun1 = false;
 							stmt = con.createStatement();
-							sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (1,'"
-									+ customer + "');";
-							kekka = stmt.executeUpdate(sql);
-						}
+							sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
+									+ customer + "';";
+							rs = stmt.executeQuery(sql);
+							rs.next();
+							if (rs.getInt(1) != 0) {
+								redun1 = true;
+							}
 
-						// レビュー重複確認
-						Boolean redun2 = false;
-						stmt = con.createStatement();
-						sql = "SELECT COUNT(*) FROM review_tbl WHERE reviewid='"
-								+ reviewid + "';";
-						rs = stmt.executeQuery(sql);
-						rs.next();
-						if (rs.getInt(1) != 0) {
-							redun2 = true;
-						}
+							// 重複なければテーブル書き込み実行
+							if (redun1 == false) {
+								stmt = con.createStatement();
+								sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (1,'"
+										+ customer + "');";
+								kekka = stmt.executeUpdate(sql);
+							}
 
-						// 重複なければレビューを追加
-						if (redun2 == false) {
+							// レビュー重複確認
+							Boolean redun2 = false;
 							stmt = con.createStatement();
-							sql = "INSERT INTO review_tbl (reviewid,asin,rate,votes,helpful,entrydate,customerid) VALUES ('"
-									+ reviewid
-									+ "','"
-									+ idString
-									+ "',"
-									+ rating
-									+ ","
-									+ votes
-									+ ","
-									+ helpful
-									+ ",'"
-									+ reviewdate
-									+ "','"
-									+ customer
-									+ "');";
-							kekka = stmt.executeUpdate(sql);
+							sql = "SELECT COUNT(*) FROM review_tbl WHERE reviewid='"
+									+ reviewid + "';";
+							rs = stmt.executeQuery(sql);
+							rs.next();
+							if (rs.getInt(1) != 0) {
+								redun2 = true;
+							}
+
+							// 重複なければレビューを追加
+							if (redun2 == false) {
+								stmt = con.createStatement();
+								sql = "INSERT INTO review_tbl (reviewid,asin,rate,votes,helpful,entrydate,customerid) VALUES ('"
+										+ reviewid
+										+ "','"
+										+ idString
+										+ "',"
+										+ rating
+										+ ","
+										+ votes
+										+ ","
+										+ helpful
+										+ ",'"
+										+ reviewdate
+										+ "','"
+										+ customer
+										+ "');";
+								kekka = stmt.executeUpdate(sql);
+							}
+						} catch (NullPointerException e) {
+							// TODO: handle exception
 						}
 
 						rs.close();
@@ -524,6 +531,9 @@ public class USamazonCrawler extends Thread {
 											+ "&sort_by=MostRecentReview")
 							.followRedirects(true).timeout(10000)
 							.userAgent("Mozilla/5.0").get());
+					listModel.add(0, "レビューページ@カスタマー取得中：" + idString + "("
+							+ (i + 1) + "/" + Math.ceil(reviewCount * 0.1)
+							+ ")");
 				}
 
 				// レビューページから商品の一覧を取得
