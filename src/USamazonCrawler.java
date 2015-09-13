@@ -167,14 +167,14 @@ public class USamazonCrawler extends Thread {
 		System.out.println("アイテム：" + idString + "を取得します");
 		Document document1 = Jsoup
 				.connect("http://www.amazon.com/dp/" + idString)
-				.followRedirects(true).timeout(10000).userAgent("Mozilla/5.0")
+				.followRedirects(true).timeout(30000).userAgent("Mozilla/5.0")
 				.get();
 		Document tmpReviewPage = Jsoup
 				.connect(
 						"http://www.amazon.com/product-reviews/"
 								+ idString
 								+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber=1")
-				.followRedirects(true).timeout(10000).userAgent("Mozilla/5.0")
+				.followRedirects(true).timeout(30000).userAgent("Mozilla/5.0")
 				.get();
 		Element revcount = tmpReviewPage.getElementsByClass("totalReviewCount")
 				.get(0);
@@ -190,7 +190,7 @@ public class USamazonCrawler extends Thread {
 											+ idString
 											+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
 											+ (i + 1)).followRedirects(true)
-							.timeout(10000).userAgent("Mozilla/5.0").get());
+							.timeout(30000).userAgent("Mozilla/5.0").get());
 			listModel.add(0, "レビューページ@アイテム取得中：" + idString + "(" + (i + 1)
 					+ "/" + Math.ceil(totalReviewCount * 0.1) + ")");
 		}
@@ -499,7 +499,7 @@ public class USamazonCrawler extends Thread {
 								"http://www.amazon.com/gp/cdp/member-reviews/"
 										+ idString
 										+ "?ie=UTF8&display=public&page=1&sort_by=MostRecentReview")
-						.followRedirects(true).timeout(10000)
+						.followRedirects(true).timeout(30000)
 						.userAgent("Mozilla/5.0").get();
 
 				String reviewCountStr = tmppage.getElementsByClass("small")
@@ -539,7 +539,7 @@ public class USamazonCrawler extends Thread {
 											+ "?ie=UTF8&display=public&page="
 											+ (i + 1)
 											+ "&sort_by=MostRecentReview")
-							.followRedirects(true).timeout(10000)
+							.followRedirects(true).timeout(30000)
 							.userAgent("Mozilla/5.0").get());
 					listModel.add(0, "レビューページ@カスタマー取得中：" + idString + "("
 							+ (i + 1) + "/" + Math.ceil(reviewCount * 0.1)
