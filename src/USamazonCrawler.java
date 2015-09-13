@@ -61,13 +61,21 @@ public class USamazonCrawler extends Thread {
 		//
 		while (true) {
 			// System.out.println("bbb");
-			System.out.println(signal);
+			// System.out.println(signal);
+
 			if (signal == 1) {
-				System.out.println("aaa");
+				// System.out.println("aaa");
 				if (popfromQueue() == false) {
 					processPause();
 				}
 
+			} else if (signal == 0) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					// TODO 自動生成された catch ブロック
+					e.printStackTrace();
+				}
 			}
 
 		}
@@ -82,6 +90,8 @@ public class USamazonCrawler extends Thread {
 		String sql;
 		boolean res = true;
 
+		System.out.println("キューをチェックします");
+
 		try {
 			// データベースとの接続
 			Connection con = DriverManager.getConnection(url, user, password);
@@ -93,7 +103,7 @@ public class USamazonCrawler extends Thread {
 			ResultSet rs = stmt.executeQuery(sql);
 			// テーブル照会結果を出力
 			rs.next();
-			System.out.println(rs.getInt(1));
+			System.out.println("キュー数" + rs.getInt(1));
 			if (rs.getInt(1) == 0) {
 				res = false;
 				rs.close();
@@ -110,18 +120,9 @@ public class USamazonCrawler extends Thread {
 				id = rs.getLong("id");
 				ic_class = rs.getInt("class");
 				idString = rs.getString("targetid");
+				System.out.println("id：" + id);
 				System.out.println("class：" + ic_class);
 				System.out.println("targetid：" + idString);
-
-				// 読みだしたレコードを削除
-				stmt = con.createStatement();
-				sql = "DELETE FROM worklist_tbl WHERE id = " + id + ";";
-				rs = stmt.executeQuery(sql);
-
-				// データベースのクローズ
-				rs.close();
-				stmt.close();
-				con.close();
 
 				if (ic_class == 0) {
 					try {
@@ -129,6 +130,7 @@ public class USamazonCrawler extends Thread {
 					} catch (IOException e) {
 						// TODO 自動生成された catch ブロック
 						e.printStackTrace();
+
 					}
 				} else if (ic_class == 1) {
 					try {
@@ -138,6 +140,18 @@ public class USamazonCrawler extends Thread {
 						e.printStackTrace();
 					}
 				}
+				// 読みだしたレコードを削除
+				stmt = con.createStatement();
+				sql = "DELETE FROM worklist_tbl WHERE id = " + id + ";";
+				/* rs = */
+				int kekka = stmt.executeUpdate(sql);
+				System.out.println("消去したID：" + id);
+
+				// データベースのクローズ
+				rs.close();
+				stmt.close();
+				con.close();
+
 			}
 
 		} catch (SQLException e) {
@@ -150,13 +164,17 @@ public class USamazonCrawler extends Thread {
 	}
 
 	private void saveItem(String idString) throws IOException {
-		Document document1 = Jsoup.connect(
-				"http://www.amazon.com/dp/" + idString).get();
+		System.out.println("アイテム：" + idString + "を取得します");
+		Document document1 = Jsoup
+				.connect("http://www.amazon.com/dp/" + idString)
+				.followRedirects(true).timeout(10000).userAgent("Mozilla/5.0")
+				.get();
 		Document tmpReviewPage = Jsoup
 				.connect(
 						"http://www.amazon.com/product-reviews/"
 								+ idString
 								+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber=1")
+				.followRedirects(true).timeout(10000).userAgent("Mozilla/5.0")
 				.get();
 		Element revcount = tmpReviewPage.getElementsByClass("totalReviewCount")
 				.get(0);
@@ -171,7 +189,8 @@ public class USamazonCrawler extends Thread {
 									"http://www.amazon.com/product-reviews/"
 											+ idString
 											+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
-											+ (i + 1)).get());
+											+ (i + 1)).followRedirects(true)
+							.timeout(10000).userAgent("Mozilla/5.0").get());
 		}
 
 		try {
@@ -211,87 +230,130 @@ public class USamazonCrawler extends Thread {
 				Date date = new Date();
 				listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - "
 						+ idString);
-				
-				String productTitle = document1.getElementById("productTitle").text();
+				stmt = con.createStatement();
+				try {
 
-				Elements breadcrumbs = document1.getElementById(
-						"wayfinding-breadcrumbs_feature_div").getElementsByTag(
-						"li");
-				ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
-				for (Element elem : breadcrumbs) {
-					String tmp = elem.text();
-					if (tmp.equals(">") == false) {
-						cats.add(tmp);
+					String productTitle = document1
+							.getElementById("productTitle").text()
+							.replace("'", "\'");
+
+					ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
+					try {
+						Elements breadcrumbs = document1.getElementById(
+								"wayfinding-breadcrumbs_feature_div")
+								.getElementsByTag("li");
+						for (Element elem : breadcrumbs) {
+							String tmp = elem.text();
+							if (tmp.trim().equals("›") == false) {
+								cats.add(tmp.trim());
+							}
+						}
+					} catch (NullPointerException e) {
+						// TODO: handle exception
 					}
+
+					System.out.println(cats.toString());
+					String entrydate = "'0'";
+					try {
+
+						if (document1
+								.getElementsByClass("date-first-available")
+								.isEmpty() == false) {
+							entrydate = document1
+									.getElementsByClass("date-first-available")
+									.first().children().last().text(); // 登録日
+						} else {
+							String chikanmoto = document1
+									.getElementsByClass("content").last()
+									.getElementsByTag("li").last().html();
+							Pattern p3 = Pattern.compile("<b>.*</b>");
+							Matcher m3 = p3.matcher(chikanmoto);
+							entrydate = m3.replaceAll("");
+							if (entrydate.length() > 20) {
+								entrydate = "'0'";
+							}
+						}
+					} catch (NullPointerException e) {
+						// TODO: handle exception
+					}
+
+					switch (cats.size()) {
+					case 0:
+						sql = "INSERT INTO item_tbl (asin,producttitle) VALUES ('"
+								+ idString + "','" + productTitle + "');";
+						break;
+					case 1:
+						sql = "INSERT INTO item_tbl (asin,cat1,producttitle) VALUES ('"
+								+ idString
+								+ "','"
+								+ cats.get(0)
+								+ "','"
+								+ productTitle + "');";
+						break;
+
+					case 2:
+						sql = "INSERT INTO item_tbl (asin,cat1,cat2,producttitle) VALUES ('"
+								+ idString
+								+ "','"
+								+ cats.get(0)
+								+ "','"
+								+ cats.get(1) + "','" + productTitle + "');";
+						break;
+
+					case 3:
+						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,producttitle) VALUES ('"
+								+ idString
+								+ "','"
+								+ cats.get(0)
+								+ "','"
+								+ cats.get(1)
+								+ "','"
+								+ cats.get(2)
+								+ "','"
+								+ productTitle + "');";
+						break;
+					case 4:
+						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,producttitle) VALUES ('"
+								+ idString
+								+ "','"
+								+ cats.get(0)
+								+ "','"
+								+ cats.get(1)
+								+ "','"
+								+ cats.get(2)
+								+ "','"
+								+ cats.get(3) + "','"
+
+								+ productTitle + "');";
+						break;
+					default:
+						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,cat5,producttitle) VALUES ('"
+								+ idString
+								+ "','"
+								+ cats.get(0)
+								+ "','"
+								+ cats.get(1)
+								+ "','"
+								+ cats.get(2)
+								+ "','"
+								+ cats.get(3)
+								+ "','"
+								+ cats.get(4)
+								+ "','"
+								+ productTitle + "');";
+						break;
+					/*
+					 * default: sql = "";
+					 * System.err.println("実行を想定していない箇所が実行されました！"); break;
+					 */
+					}
+				} catch (NullPointerException e) {
+					// TODO: handle exception
+					sql = "INSERT INTO item_tbl (asin) VALUES ('" + idString
+							+ "');";
 				}
-				Element entrydate = document1
-						.getElementsByClass("date-first-available").first()
-						.children().last(); // 登録日
 
-				switch (cats.size()) {
-				case 1:
-					sql = "INSERT INTO item_tbl (asin,cat1,entrydate) VALUES ('"
-							+ idString
-							+ "','"
-							+ cats.get(0)
-							+ "','"
-							+ entrydate.text() + "');";
-					break;
-
-				case 2:
-					sql = "INSERT INTO item_tbl (asin,cat1,cat2,entrydate) VALUES ('"
-							+ idString
-							+ "','"
-							+ cats.get(0)
-							+ "','"
-							+ cats.get(1) + "','" + entrydate.text() + "');";
-					break;
-
-				case 3:
-					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,entrydate) VALUES ('"
-							+ idString
-							+ "','"
-							+ cats.get(0)
-							+ "','"
-							+ cats.get(1)
-							+ "','"
-							+ cats.get(2)
-							+ "','"
-							+ entrydate.text() + "');";
-					break;
-				case 4:
-					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,entrydate) VALUES ('"
-							+ idString
-							+ "','"
-							+ cats.get(0)
-							+ "','"
-							+ cats.get(1)
-							+ "','"
-							+ cats.get(2)
-							+ "','"
-							+ cats.get(3) + "','" + entrydate.text() + "');";
-					break;
-				case 5:
-					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,cat5,entrydate) VALUES ('"
-							+ idString
-							+ "','"
-							+ cats.get(0)
-							+ "','"
-							+ cats.get(1)
-							+ "','"
-							+ cats.get(2)
-							+ "','"
-							+ cats.get(3)
-							+ "','"
-							+ cats.get(4)
-							+ "','"
-							+ entrydate.text() + "');";
-					break;
-				default:
-					break;
-				}
-
-				rs = stmt.executeQuery(sql);
+				int kekka = stmt.executeUpdate(sql);
 
 				for (Document d : revpagelist) {
 
@@ -313,14 +375,18 @@ public class USamazonCrawler extends Thread {
 
 						listModel.add(0, date.toString()
 								+ "Amazon.comから取得:レビュー - " + reviewid);
+						int helpful = 0;
+						int votes = 0;
 
-						Pattern p = Pattern.compile("[0-9]+");
-						Matcher m = p.matcher(vote_help_senten);
+						if (vote_help_senten.trim().equals("") == false) {
+							Pattern p = Pattern.compile("[0-9]+");
+							Matcher m = p.matcher(vote_help_senten);
 
-						m.find();
-						int helpful = Integer.parseInt(m.group()); // 役立ち人数
-						m.find();
-						int votes = Integer.parseInt(m.group()); // 投票総数
+							m.find();
+							helpful = Integer.parseInt(m.group()); // 役立ち人数
+							m.find();
+							votes = Integer.parseInt(m.group()); // 投票総数
+						}
 
 						// 作業リストに存在するか検査
 						Boolean redun1 = false;
@@ -336,9 +402,9 @@ public class USamazonCrawler extends Thread {
 						// 重複なければテーブル書き込み実行
 						if (redun1 == false) {
 							stmt = con.createStatement();
-							sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (1,"
-									+ customer + ");";
-							rs = stmt.executeQuery(sql);
+							sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (1,'"
+									+ customer + "');";
+							kekka = stmt.executeUpdate(sql);
 						}
 
 						// レビュー重複確認
@@ -370,7 +436,7 @@ public class USamazonCrawler extends Thread {
 									+ "','"
 									+ customer
 									+ "');";
-							rs = stmt.executeQuery(sql);
+							kekka = stmt.executeUpdate(sql);
 						}
 
 						rs.close();
@@ -386,11 +452,13 @@ public class USamazonCrawler extends Thread {
 		} catch (SQLException e) {
 			System.err.println("SQL failed.");
 			e.printStackTrace();
+		} catch (NullPointerException e) {
+			// TODO: handle exception
 		}
 	}
 
 	private void saveCustom(String idString) throws IOException {
-
+		System.out.println("カスタマー：" + idString + "を取得します");
 		// 重複確認
 		Boolean redun3 = false;
 
@@ -414,7 +482,8 @@ public class USamazonCrawler extends Thread {
 								"http://www.amazon.com/gp/cdp/member-reviews/"
 										+ idString
 										+ "?ie=UTF8&display=public&page=1&sort_by=MostRecentReview")
-						.get();
+						.followRedirects(true).timeout(10000)
+						.userAgent("Mozilla/5.0").get();
 
 				String reviewCountStr = tmppage.getElementsByClass("small")
 						.get(2).text();
@@ -424,43 +493,61 @@ public class USamazonCrawler extends Thread {
 
 				m.find();
 				int reviewCount = Integer.parseInt(m.group()); // レビュー数
+				System.out.println("レビュー数：" + reviewCount);
 
 				String cus_name = tmppage.getElementsByClass("first").first()
 						.text();
-				Matcher m2 = Pattern.compile(".+(?=\'s Profile)").matcher(
-						cus_name);
+				System.out.println("名前が含まれているはずの文字列：" + cus_name);
+				Matcher m2 = Pattern.compile(".+(?=\')").matcher(cus_name);
 				m2.find();
 				cus_name = m2.group();
+				System.out.println("名前:" + cus_name);
 
 				stmt = con.createStatement();
-				sql = "INSERT INTO customer_tbl (customerid,name) VALUES ('"
+				sql = "INSERT INTO customer_tbl (customerid,customername) VALUES ('"
 						+ idString + "','" + cus_name + "');";
+				int kekka = stmt.executeUpdate(sql);
+
+				Date date = new Date();
+				listModel.add(0, date.toString() + "Amazon.comから取得:カスタマー - "
+						+ idString);
 
 				// カスタマーのレビューページすべてを一気に取得
 				ArrayList<Document> cusReviewpage = new ArrayList<Document>();
 				for (int i = 0; i < Math.ceil(reviewCount * 0.1); i++) {
-					cusReviewpage.add(Jsoup.connect(
-							"http://www.amazon.com/gp/cdp/member-reviews/"
-									+ idString
-									+ "?ie=UTF8&display=public&page=" + (i + 1)
-									+ "&sort_by=MostRecentReview").get());
+					cusReviewpage.add(Jsoup
+							.connect(
+									"http://www.amazon.com/gp/cdp/member-reviews/"
+											+ idString
+											+ "?ie=UTF8&display=public&page="
+											+ (i + 1)
+											+ "&sort_by=MostRecentReview")
+							.followRedirects(true).timeout(10000)
+							.userAgent("Mozilla/5.0").get());
 				}
 
 				// レビューページから商品の一覧を取得
 				ArrayList<String> itemList = new ArrayList<String>();
-				Pattern p1 = Pattern.compile("/dp/(B\\w{9})/");
+				Pattern p1 = Pattern.compile(".*/dp/(B\\w{9}).*");
+				System.out.println(itemList.toString());
+				// System.out.println(cusReviewpage.toString());
+
 				for (Document document : cusReviewpage) {
 					for (Element elem : document.getElementsByTag("a")) {
+
 						if (elem.attr("href").isEmpty() == false) {
 							// 判定するパターンを生成
+							// System.out.println(elem.attr("href"));
 
 							Matcher m1 = p1.matcher(elem.attr("href"));
 
 							if (m1.matches()) {
-								System.out.println(m.group(0)); // →abc123def456ghi
-								System.out.println(m.groupCount()); // →3
+								// System.out.println(m.group(0)); //
+								// →abc123def456ghi
+								// System.out.println(m.groupCount()); // →3
 
 								if (strMatch(itemList, m1.group(1)) == false) {
+									System.out.println("アイテム：" + m1.group(1));
 									itemList.add(m1.group(1));
 
 									try {
@@ -477,6 +564,7 @@ public class USamazonCrawler extends Thread {
 										sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
 												+ m1.group(1) + "';";
 										rs = stmt.executeQuery(sql);
+										rs.next();
 										if (rs.getInt(1) != 0) {
 											redun = true;
 										}
@@ -493,9 +581,9 @@ public class USamazonCrawler extends Thread {
 										// 両方とも重複なければ作業リストに投げる
 										if (redun == false) {
 											stmt = con.createStatement();
-											sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (0,"
-													+ m1.group(1) + ");";
-											rs = stmt.executeQuery(sql);
+											sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (0,'"
+													+ m1.group(1) + "');";
+											kekka = stmt.executeUpdate(sql);
 											rs.close();
 
 										}

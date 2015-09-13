@@ -10,6 +10,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JList;
+import javax.swing.JScrollPane;
 
 
 public class InfoCollect {
@@ -46,6 +47,9 @@ public class InfoCollect {
 	public InfoCollect() {
 		initialize();
 		usAmazon = new USamazonCrawler(bar,lblState,listModel);
+		listProcess = new JList<String>(listModel);
+		listProcess.setBounds(29, 94, 554, 264);
+		frame.getContentPane().add(listProcess);
 		usAmazon.start();
 	}
 
@@ -56,7 +60,7 @@ public class InfoCollect {
 		frame = new JFrame();
 		frame.setTitle("データ収集ツール");
 		frame.setResizable(false);
-		frame.setBounds(100, 100, 545, 353);
+		frame.setBounds(100, 100, 606, 400);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
@@ -82,16 +86,13 @@ public class InfoCollect {
 		frame.getContentPane().add(btnPause);
 		
 		lblState = new JLabel("起動しました");
-		lblState.setBounds(313, 24, 210, 16);
+		lblState.setBounds(313, 24, 270, 16);
 		frame.getContentPane().add(lblState);
 		
 		bar = new JProgressBar();
-		bar.setBounds(29, 60, 494, 22);
+		bar.setBounds(29, 60, 554, 22);
 		frame.getContentPane().add(bar);
 		
 		listModel = new DefaultListModel<String>(); 
-		listProcess = new JList<String>(listModel);
-		listProcess.setBounds(29, 94, 494, 214);
-		frame.getContentPane().add(listProcess);
 	}
 }
