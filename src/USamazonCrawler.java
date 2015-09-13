@@ -390,6 +390,7 @@ public class USamazonCrawler extends Thread {
 	}
 
 	private void saveCustom(String idString) throws IOException {
+		//1ページ目を取得しカスタマーのレビュー数をget
 		Document tmppage = Jsoup
 				.connect(
 						"http://www.amazon.com/gp/cdp/member-reviews/"
@@ -406,6 +407,7 @@ public class USamazonCrawler extends Thread {
 		m.find();
 		int reviewCount = Integer.parseInt(m.group()); // レビュー数
 
+		//カスタマーのレビューページすべてを一気に取得
 		ArrayList<Document> cusReviewpage = new ArrayList<Document>();
 		for (int i = 0; i < Math.ceil(reviewCount * 0.1); i++) {
 			cusReviewpage.add(Jsoup.connect(
@@ -414,10 +416,82 @@ public class USamazonCrawler extends Thread {
 							+ "&sort_by=MostRecentReview").get());
 		}
 
+		//レビューページから商品の一覧を取得
+		ArrayList<String> itemList = new ArrayList<String>();
+		Pattern p1 = Pattern.compile("/dp/(B\\w{9})/");
 		for (Document document : cusReviewpage) {
-			
+			for (Element elem : document.getElementsByTag("a")) {
+				if (elem.attr("href").isEmpty() == false) {
+					// 判定するパターンを生成
+
+					Matcher m1 = p1.matcher(elem.attr("href"));
+
+					if (m1.matches()) {
+						System.out.println(m.group(0)); // →abc123def456ghi
+						System.out.println(m.groupCount()); // →3
+
+						if (strMatch(itemList, m1.group(1)) == false) {
+							itemList.add(m1.group(1));
+
+							try {
+								// データベースとの接続
+								Connection con = DriverManager.getConnection(
+										url, user, password);
+								// テーブル照会実行
+								Statement stmt = con.createStatement();
+								String sql = "";
+								ResultSet rs;
+								Boolean redun = false;
+
+								//作業リストにあるかないか確認
+								sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
+										+ m1.group(1) + "';";
+								rs = stmt.executeQuery(sql);
+								if (rs.getInt(1) != 0) {
+									redun = true;
+								}
+								
+								//商品リストの有無を確認
+								stmt = con.createStatement();
+								sql = "SELECT COUNT(*) FROM item_tbl WHERE asin='"
+										+ m1.group(1) + "';";
+								rs = stmt.executeQuery(sql);
+								if (rs.getInt(1) != 0) {
+									redun = true;
+								}
+								//両方とも重複なければ作業リストに投げる
+								if (redun==false) {
+									stmt = con.createStatement();
+									sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (0,"
+											+ m1.group(1) + ");";
+									rs = stmt.executeQuery(sql);
+									rs.close();
+								}
+								
+								// データベースのクローズ
+								stmt.close();
+								con.close();
+
+							} catch (SQLException e) {
+								System.err.println("SQL failed.");
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+
+			}
 		}
 
+	}
+
+	static boolean strMatch(ArrayList<String> arr, String str) {
+		for (String string : arr) {
+			if (string.equals(str)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	synchronized public void processStart() {
