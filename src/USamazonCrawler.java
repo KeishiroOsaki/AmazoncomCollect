@@ -373,6 +373,9 @@ public class USamazonCrawler extends Thread {
 							} catch (NullPointerException e) {
 								// TODO: handle exception
 								continue;
+							} catch (IndexOutOfBoundsException e) {
+								// TODO: handle exception
+								continue;
 							}
 							
 							String reviewid = element.attr("id"); // レビューID
