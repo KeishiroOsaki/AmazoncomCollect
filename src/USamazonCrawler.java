@@ -163,7 +163,7 @@ public class USamazonCrawler extends Thread {
 		int totalReviewCount = Integer.parseInt(revcount.text().replaceAll(",",
 				""));
 		ArrayList<Document> revpagelist = new ArrayList<Document>();
-		ArrayList<String> customers = new ArrayList<String>();
+		//ArrayList<String> customers = new ArrayList<String>();
 		for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
 			revpagelist
 					.add(Jsoup
@@ -191,13 +191,11 @@ public class USamazonCrawler extends Thread {
 			ResultSet rs;
 			Boolean redun = false;
 
-			sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
-					+ idString + "';";
-			rs = stmt.executeQuery(sql);
-			rs.next();
-			if (rs.getInt(1) != 0) {
-				redun = true;
-			}
+			/*
+			 * sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='" +
+			 * idString + "';"; rs = stmt.executeQuery(sql); rs.next(); if
+			 * (rs.getInt(1) != 0) { redun = true; }
+			 */
 
 			stmt = con.createStatement();
 			sql = "SELECT COUNT(*) FROM item_tbl WHERE asin='" + idString
@@ -390,99 +388,123 @@ public class USamazonCrawler extends Thread {
 	}
 
 	private void saveCustom(String idString) throws IOException {
-		//1ページ目を取得しカスタマーのレビュー数をget
-		Document tmppage = Jsoup
-				.connect(
-						"http://www.amazon.com/gp/cdp/member-reviews/"
-								+ idString
-								+ "?ie=UTF8&display=public&page=1&sort_by=MostRecentReview")
-				.get();
 
-		String reviewCountStr = tmppage.getElementsByClass("small").get(2)
-				.text();
+		//重複確認
+		Boolean redun3 = false;
 
-		Pattern p = Pattern.compile("[0-9]+");
-		Matcher m = p.matcher(reviewCountStr);
+		try {
+			Connection con = DriverManager.getConnection(url, user, password);
 
-		m.find();
-		int reviewCount = Integer.parseInt(m.group()); // レビュー数
+			Statement stmt = con.createStatement();
+			String sql = "SELECT COUNT(*) FROM customer_tbl WHERE customerid='"
+					+ idString + "';";
+			ResultSet rs = stmt.executeQuery(sql);
+			rs.next();
+			if (rs.getInt(1) != 0) {
+				redun3 = true;
+			}
 
-		//カスタマーのレビューページすべてを一気に取得
-		ArrayList<Document> cusReviewpage = new ArrayList<Document>();
-		for (int i = 0; i < Math.ceil(reviewCount * 0.1); i++) {
-			cusReviewpage.add(Jsoup.connect(
-					"http://www.amazon.com/gp/cdp/member-reviews/" + idString
-							+ "?ie=UTF8&display=public&page=" + (i + 1)
-							+ "&sort_by=MostRecentReview").get());
-		}
+			if (redun3 == false) {
+				// 1ページ目を取得しカスタマーのレビュー数をget
+				Document tmppage = Jsoup
+						.connect(
+								"http://www.amazon.com/gp/cdp/member-reviews/"
+										+ idString
+										+ "?ie=UTF8&display=public&page=1&sort_by=MostRecentReview")
+						.get();
 
-		//レビューページから商品の一覧を取得
-		ArrayList<String> itemList = new ArrayList<String>();
-		Pattern p1 = Pattern.compile("/dp/(B\\w{9})/");
-		for (Document document : cusReviewpage) {
-			for (Element elem : document.getElementsByTag("a")) {
-				if (elem.attr("href").isEmpty() == false) {
-					// 判定するパターンを生成
+				String reviewCountStr = tmppage.getElementsByClass("small")
+						.get(2).text();
 
-					Matcher m1 = p1.matcher(elem.attr("href"));
+				Pattern p = Pattern.compile("[0-9]+");
+				Matcher m = p.matcher(reviewCountStr);
 
-					if (m1.matches()) {
-						System.out.println(m.group(0)); // →abc123def456ghi
-						System.out.println(m.groupCount()); // →3
+				m.find();
+				int reviewCount = Integer.parseInt(m.group()); // レビュー数
 
-						if (strMatch(itemList, m1.group(1)) == false) {
-							itemList.add(m1.group(1));
-
-							try {
-								// データベースとの接続
-								Connection con = DriverManager.getConnection(
-										url, user, password);
-								// テーブル照会実行
-								Statement stmt = con.createStatement();
-								String sql = "";
-								ResultSet rs;
-								Boolean redun = false;
-
-								//作業リストにあるかないか確認
-								sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
-										+ m1.group(1) + "';";
-								rs = stmt.executeQuery(sql);
-								if (rs.getInt(1) != 0) {
-									redun = true;
-								}
-								
-								//商品リストの有無を確認
-								stmt = con.createStatement();
-								sql = "SELECT COUNT(*) FROM item_tbl WHERE asin='"
-										+ m1.group(1) + "';";
-								rs = stmt.executeQuery(sql);
-								if (rs.getInt(1) != 0) {
-									redun = true;
-								}
-								//両方とも重複なければ作業リストに投げる
-								if (redun==false) {
-									stmt = con.createStatement();
-									sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (0,"
-											+ m1.group(1) + ");";
-									rs = stmt.executeQuery(sql);
-									rs.close();
-								}
-								
-								// データベースのクローズ
-								stmt.close();
-								con.close();
-
-							} catch (SQLException e) {
-								System.err.println("SQL failed.");
-								e.printStackTrace();
-							}
-						}
-					}
+				// カスタマーのレビューページすべてを一気に取得
+				ArrayList<Document> cusReviewpage = new ArrayList<Document>();
+				for (int i = 0; i < Math.ceil(reviewCount * 0.1); i++) {
+					cusReviewpage.add(Jsoup.connect(
+							"http://www.amazon.com/gp/cdp/member-reviews/"
+									+ idString
+									+ "?ie=UTF8&display=public&page=" + (i + 1)
+									+ "&sort_by=MostRecentReview").get());
 				}
 
-			}
-		}
+				// レビューページから商品の一覧を取得
+				ArrayList<String> itemList = new ArrayList<String>();
+				Pattern p1 = Pattern.compile("/dp/(B\\w{9})/");
+				for (Document document : cusReviewpage) {
+					for (Element elem : document.getElementsByTag("a")) {
+						if (elem.attr("href").isEmpty() == false) {
+							// 判定するパターンを生成
 
+							Matcher m1 = p1.matcher(elem.attr("href"));
+
+							if (m1.matches()) {
+								System.out.println(m.group(0)); // →abc123def456ghi
+								System.out.println(m.groupCount()); // →3
+
+								if (strMatch(itemList, m1.group(1)) == false) {
+									itemList.add(m1.group(1));
+
+									try {
+										// データベースとの接続
+										con = DriverManager.getConnection(url,
+												user, password);
+										// テーブル照会実行
+										stmt = con.createStatement();
+										sql = "";
+										// ResultSet rs;
+										Boolean redun = false;
+
+										// 作業リストにあるかないか確認
+										sql = "SELECT COUNT(*) FROM worklist_tbl WHERE targetid='"
+												+ m1.group(1) + "';";
+										rs = stmt.executeQuery(sql);
+										if (rs.getInt(1) != 0) {
+											redun = true;
+										}
+
+										// 商品リストの有無を確認
+										stmt = con.createStatement();
+										sql = "SELECT COUNT(*) FROM item_tbl WHERE asin='"
+												+ m1.group(1) + "';";
+										rs = stmt.executeQuery(sql);
+										rs.next();
+										if (rs.getInt(1) != 0) {
+											redun = true;
+										}
+										// 両方とも重複なければ作業リストに投げる
+										if (redun == false) {
+											stmt = con.createStatement();
+											sql = "INSERT INTO worklist_tbl (class,targetid) VALUES (0,"
+													+ m1.group(1) + ");";
+											rs = stmt.executeQuery(sql);
+											rs.close();
+
+										}
+
+										// データベースのクローズ
+										stmt.close();
+										con.close();
+
+									} catch (SQLException e) {
+										System.err.println("SQL failed.");
+										e.printStackTrace();
+									}
+								}
+							}
+						}
+
+					}
+				}
+			}
+		} catch (SQLException e1) {
+			// TODO 自動生成された catch ブロック
+			e1.printStackTrace();
+		}
 	}
 
 	static boolean strMatch(ArrayList<String> arr, String str) {
