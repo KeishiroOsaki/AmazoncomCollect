@@ -163,7 +163,7 @@ public class USamazonCrawler extends Thread {
 		int totalReviewCount = Integer.parseInt(revcount.text().replaceAll(",",
 				""));
 		ArrayList<Document> revpagelist = new ArrayList<Document>();
-		//ArrayList<String> customers = new ArrayList<String>();
+		// ArrayList<String> customers = new ArrayList<String>();
 		for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
 			revpagelist
 					.add(Jsoup
@@ -211,6 +211,8 @@ public class USamazonCrawler extends Thread {
 				Date date = new Date();
 				listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - "
 						+ idString);
+				
+				String productTitle = document1.getElementById("productTitle").text();
 
 				Elements breadcrumbs = document1.getElementById(
 						"wayfinding-breadcrumbs_feature_div").getElementsByTag(
@@ -389,7 +391,7 @@ public class USamazonCrawler extends Thread {
 
 	private void saveCustom(String idString) throws IOException {
 
-		//重複確認
+		// 重複確認
 		Boolean redun3 = false;
 
 		try {
@@ -405,6 +407,7 @@ public class USamazonCrawler extends Thread {
 			}
 
 			if (redun3 == false) {
+
 				// 1ページ目を取得しカスタマーのレビュー数をget
 				Document tmppage = Jsoup
 						.connect(
@@ -421,6 +424,17 @@ public class USamazonCrawler extends Thread {
 
 				m.find();
 				int reviewCount = Integer.parseInt(m.group()); // レビュー数
+
+				String cus_name = tmppage.getElementsByClass("first").first()
+						.text();
+				Matcher m2 = Pattern.compile(".+(?=\'s Profile)").matcher(
+						cus_name);
+				m2.find();
+				cus_name = m2.group();
+
+				stmt = con.createStatement();
+				sql = "INSERT INTO customer_tbl (customerid,name) VALUES ('"
+						+ idString + "','" + cus_name + "');";
 
 				// カスタマーのレビューページすべてを一気に取得
 				ArrayList<Document> cusReviewpage = new ArrayList<Document>();
