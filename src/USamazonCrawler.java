@@ -365,9 +365,16 @@ public class USamazonCrawler extends Thread {
 							int rating = Character.getNumericValue(element
 									.getElementsByClass("a-icon-alt").get(0)
 									.text().charAt(0)); // 星の数
-							String customer = element
-									.getElementsByClass("author").get(0)
-									.attr("href").split("/")[4]; // 投稿者ID
+							String customer;
+							try {
+								customer = element
+										.getElementsByClass("author").get(0)
+										.attr("href").split("/")[4]; // 投稿者ID
+							} catch (NullPointerException e) {
+								// TODO: handle exception
+								continue;
+							}
+							
 							String reviewid = element.attr("id"); // レビューID
 							String reviewdate = element
 									.getElementsByClass("review-date").get(0)
