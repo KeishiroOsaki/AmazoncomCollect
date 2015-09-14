@@ -139,6 +139,7 @@ public class USamazonCrawler extends Thread {
 
 					} catch (NullPointerException e) {
 						// TODO: handle exception
+						System.err.println("ヌルポ");
 					}
 				} else if (ic_class == 1) {
 					
@@ -151,7 +152,10 @@ public class USamazonCrawler extends Thread {
 						e.printStackTrace();
 					} catch (NullPointerException e) {
 						// TODO: handle exception
-						
+						System.err.println("ヌルポ");
+					} catch (IndexOutOfBoundsException e) {
+						// TODO: handle exception
+						System.err.println("インデックスが超越");
 					}
 				
 				}
@@ -491,7 +495,7 @@ public class USamazonCrawler extends Thread {
 		}
 	}
 
-	private void saveCustom(String idString) throws IOException, NullPointerException {
+	private void saveCustom(String idString) throws IOException, NullPointerException , IndexOutOfBoundsException {
 		System.out.println("カスタマー：" + idString + "を取得します");
 		// 重複確認
 		Boolean redun3 = false;
