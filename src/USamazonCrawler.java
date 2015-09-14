@@ -203,6 +203,7 @@ public class USamazonCrawler extends Thread {
 				.get(0);
 		int totalReviewCount = Integer.parseInt(revcount.text().replaceAll(",",
 				""));
+		System.out.println("レビュー数：" + totalReviewCount);
 		ArrayList<Document> revpagelist = new ArrayList<Document>();
 		// ArrayList<String> customers = new ArrayList<String>();
 		for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
