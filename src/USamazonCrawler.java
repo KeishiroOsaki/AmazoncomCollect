@@ -123,23 +123,39 @@ public class USamazonCrawler extends Thread {
 				System.out.println("id：" + id);
 				System.out.println("class：" + ic_class);
 				System.out.println("targetid：" + idString);
+				
+				Boolean proResult =false;
 
+				do {
+					
+				
 				if (ic_class == 0) {
 					try {
 						saveItem(idString);
+						proResult = true;
 					} catch (IOException e) {
 						// TODO 自動生成された catch ブロック
 						e.printStackTrace();
 
+					} catch (NullPointerException e) {
+						// TODO: handle exception
 					}
 				} else if (ic_class == 1) {
+					
 					try {
 						saveCustom(idString);
+						proResult = true;
+						
 					} catch (IOException e) {
 						// TODO 自動生成された catch ブロック
 						e.printStackTrace();
+					} catch (NullPointerException e) {
+						// TODO: handle exception
+						
 					}
+				
 				}
+				} while (proResult == false);
 				// 読みだしたレコードを削除
 				stmt = con.createStatement();
 				sql = "DELETE FROM worklist_tbl WHERE id = " + id + ";";
