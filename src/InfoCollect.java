@@ -48,7 +48,7 @@ public class InfoCollect {
 		initialize();
 		usAmazon = new USamazonCrawler(bar,lblState,listModel);
 		listProcess = new JList<String>(listModel);
-		listProcess.setBounds(29, 94, 554, 264);
+		listProcess.setBounds(29, 94, 636, 334);
 		frame.getContentPane().add(listProcess);
 		usAmazon.start();
 	}
@@ -60,7 +60,7 @@ public class InfoCollect {
 		frame = new JFrame();
 		frame.setTitle("データ収集ツール");
 		frame.setResizable(false);
-		frame.setBounds(100, 100, 606, 400);
+		frame.setBounds(100, 100, 695, 469);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
@@ -86,11 +86,11 @@ public class InfoCollect {
 		frame.getContentPane().add(btnPause);
 		
 		lblState = new JLabel("起動しました");
-		lblState.setBounds(313, 24, 270, 16);
+		lblState.setBounds(313, 24, 352, 16);
 		frame.getContentPane().add(lblState);
 		
 		bar = new JProgressBar();
-		bar.setBounds(29, 60, 554, 22);
+		bar.setBounds(29, 60, 636, 22);
 		frame.getContentPane().add(bar);
 		
 		listModel = new DefaultListModel<String>(); 

@@ -167,14 +167,14 @@ public class USamazonCrawler extends Thread {
 		System.out.println("アイテム：" + idString + "を取得します");
 		Document document1 = Jsoup
 				.connect("http://www.amazon.com/dp/" + idString)
-				.followRedirects(true).timeout(30000).userAgent("Mozilla/5.0")
+				.followRedirects(true).timeout(0).userAgent("Mozilla/5.0")
 				.get();
 		Document tmpReviewPage = Jsoup
 				.connect(
 						"http://www.amazon.com/product-reviews/"
 								+ idString
 								+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber=1")
-				.followRedirects(true).timeout(30000).userAgent("Mozilla/5.0")
+				.followRedirects(true).timeout(0).userAgent("Mozilla/5.0")
 				.get();
 		Element revcount = tmpReviewPage.getElementsByClass("totalReviewCount")
 				.get(0);
@@ -190,8 +190,9 @@ public class USamazonCrawler extends Thread {
 											+ idString
 											+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
 											+ (i + 1)).followRedirects(true)
-							.timeout(30000).userAgent("Mozilla/5.0").get());
-			listModel.add(0, "レビューページ@アイテム取得中：" + idString + "(" + (i + 1)
+							.timeout(0).userAgent("Mozilla/5.0").get());
+			Date date = new Date();
+			listModel.add(0, date.toString() + " レビューページ@アイテム取得中：" + idString + "(" + (i + 1)
 					+ "/" + Math.ceil(totalReviewCount * 0.1) + ")");
 		}
 
@@ -474,7 +475,7 @@ public class USamazonCrawler extends Thread {
 		}
 	}
 
-	private void saveCustom(String idString) throws IOException {
+	private void saveCustom(String idString) throws IOException, NullPointerException {
 		System.out.println("カスタマー：" + idString + "を取得します");
 		// 重複確認
 		Boolean redun3 = false;
@@ -499,7 +500,7 @@ public class USamazonCrawler extends Thread {
 								"http://www.amazon.com/gp/cdp/member-reviews/"
 										+ idString
 										+ "?ie=UTF8&display=public&page=1&sort_by=MostRecentReview")
-						.followRedirects(true).timeout(30000)
+						.followRedirects(true).timeout(0)
 						.userAgent("Mozilla/5.0").get();
 
 				String reviewCountStr = tmppage.getElementsByClass("small")
@@ -512,6 +513,7 @@ public class USamazonCrawler extends Thread {
 				int reviewCount = Integer.parseInt(m.group()); // レビュー数
 				System.out.println("レビュー数：" + reviewCount);
 
+				//System.out.println("span first：" + tmppage/*.getElementsByClass("first")*/.toString());
 				String cus_name = tmppage.getElementsByClass("first").first()
 						.text();
 				System.out.println("名前が含まれているはずの文字列：" + cus_name);
@@ -526,7 +528,7 @@ public class USamazonCrawler extends Thread {
 				int kekka = stmt.executeUpdate(sql);
 
 				Date date = new Date();
-				listModel.add(0, date.toString() + "Amazon.comから取得:カスタマー - "
+				listModel.add(0, date.toString() + " Amazon.comから取得:カスタマー - "
 						+ idString);
 
 				// カスタマーのレビューページすべてを一気に取得
@@ -539,9 +541,10 @@ public class USamazonCrawler extends Thread {
 											+ "?ie=UTF8&display=public&page="
 											+ (i + 1)
 											+ "&sort_by=MostRecentReview")
-							.followRedirects(true).timeout(30000)
+							.followRedirects(true).timeout(0)
 							.userAgent("Mozilla/5.0").get());
-					listModel.add(0, "レビューページ@カスタマー取得中：" + idString + "("
+					 date = new Date();
+					listModel.add(0, date.toString() + " レビューページ@カスタマー取得中：" + idString + "("
 							+ (i + 1) + "/" + Math.ceil(reviewCount * 0.1)
 							+ ")");
 				}
@@ -566,9 +569,12 @@ public class USamazonCrawler extends Thread {
 								// →abc123def456ghi
 								// System.out.println(m.groupCount()); // →3
 
+								//すでに抽出したアイテムとの重複確認
 								if (strMatch(itemList, m1.group(1)) == false) {
 									System.out.println("アイテム：" + m1.group(1));
 									itemList.add(m1.group(1));
+									 date = new Date();
+									listModel.add(0, date.toString() + " アイテム抽出：" + m1.group(1));
 
 									try {
 										// データベースとの接続
