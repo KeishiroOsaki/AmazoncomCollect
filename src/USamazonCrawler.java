@@ -140,6 +140,9 @@ public class USamazonCrawler extends Thread {
 					} catch (NullPointerException e) {
 						// TODO: handle exception
 						System.err.println("ヌルポ");
+					}catch (IndexOutOfBoundsException e) {
+						// TODO: handle exception
+						System.err.println("インデックスが超越");
 					}
 				} else if (ic_class == 1) {
 					
@@ -254,14 +257,14 @@ public class USamazonCrawler extends Thread {
 				listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - "
 						+ idString);
 				stmt = con.createStatement();
-				try {
+				//try {
 
 					String productTitle = document1
 							.getElementById("productTitle").text()
-							.replace("'", "\'");
+							.replaceAll("'", "");
 
 					ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
-					try {
+					
 						Elements breadcrumbs = document1.getElementById(
 								"wayfinding-breadcrumbs_feature_div")
 								.getElementsByTag("li");
@@ -271,11 +274,10 @@ public class USamazonCrawler extends Thread {
 								cats.add(tmp.trim());
 							}
 						}
-					} catch (NullPointerException e) {
-						// TODO: handle exception
-					}
+
 
 					System.out.println(cats.toString());
+				/*
 					String entrydate = "'0'";
 					try {
 
@@ -299,6 +301,7 @@ public class USamazonCrawler extends Thread {
 					} catch (NullPointerException e) {
 						// TODO: handle exception
 					}
+					*/
 
 					switch (cats.size()) {
 					case 0:
@@ -370,11 +373,13 @@ public class USamazonCrawler extends Thread {
 					 * System.err.println("実行を想定していない箇所が実行されました！"); break;
 					 */
 					}
+					/*
 				} catch (NullPointerException e) {
 					// TODO: handle exception
 					sql = "INSERT INTO item_tbl (asin) VALUES ('" + idString
 							+ "');";
 				}
+				*/
 
 				int kekka = stmt.executeUpdate(sql);
 
@@ -475,6 +480,7 @@ public class USamazonCrawler extends Thread {
 							}
 						} catch (NullPointerException e) {
 							// TODO: handle exception
+							continue;
 						}
 
 						rs.close();
