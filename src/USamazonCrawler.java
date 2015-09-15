@@ -123,45 +123,48 @@ public class USamazonCrawler extends Thread {
 				System.out.println("id：" + id);
 				System.out.println("class：" + ic_class);
 				System.out.println("targetid：" + idString);
-				
-				Boolean proResult =false;
+
+				Boolean proResult = false;
 
 				do {
-					
-				
-				if (ic_class == 0) {
-					try {
-						saveItem(idString);
-						proResult = true;
-					} catch (IOException e) {
-						// TODO 自動生成された catch ブロック
-						e.printStackTrace();
 
-					} catch (NullPointerException e) {
-						// TODO: handle exception
-						System.err.println("ヌルポ");
-					}catch (IndexOutOfBoundsException e) {
-						// TODO: handle exception
-						System.err.println("インデックスが超越");
+					if (ic_class == 0) {
+						try {
+							saveItem(idString);
+							proResult = true;
+						} catch (IOException e) {
+							// TODO 自動生成された catch ブロック
+							e.printStackTrace();
+
+						} catch (NullPointerException e) {
+							// TODO: handle exception
+							System.err.println("ヌルポ");
+							e.printStackTrace();
+						} catch (IndexOutOfBoundsException e) {
+							// TODO: handle exception
+							System.err.println("インデックスが超越");
+							e.printStackTrace();
+						}
+					} else if (ic_class == 1) {
+
+						try {
+							saveCustom(idString);
+							proResult = true;
+
+						} catch (IOException e) {
+							// TODO 自動生成された catch ブロック
+							e.printStackTrace();
+						} catch (NullPointerException e) {
+							// TODO: handle exception
+							System.err.println("ヌルポ");
+							e.printStackTrace();
+						} catch (IndexOutOfBoundsException e) {
+							// TODO: handle exception
+							System.err.println("インデックスが超越");
+							e.printStackTrace();
+						}
+
 					}
-				} else if (ic_class == 1) {
-					
-					try {
-						saveCustom(idString);
-						proResult = true;
-						
-					} catch (IOException e) {
-						// TODO 自動生成された catch ブロック
-						e.printStackTrace();
-					} catch (NullPointerException e) {
-						// TODO: handle exception
-						System.err.println("ヌルポ");
-					} catch (IndexOutOfBoundsException e) {
-						// TODO: handle exception
-						System.err.println("インデックスが超越");
-					}
-				
-				}
 				} while (proResult == false);
 				// 読みだしたレコードを削除
 				stmt = con.createStatement();
@@ -187,38 +190,6 @@ public class USamazonCrawler extends Thread {
 	}
 
 	private void saveItem(String idString) throws IOException {
-		System.out.println("アイテム：" + idString + "を取得します");
-		Document document1 = Jsoup
-				.connect("http://www.amazon.com/dp/" + idString)
-				.followRedirects(true).timeout(0).userAgent("Mozilla/5.0")
-				.get();
-		Document tmpReviewPage = Jsoup
-				.connect(
-						"http://www.amazon.com/product-reviews/"
-								+ idString
-								+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber=1")
-				.followRedirects(true).timeout(0).userAgent("Mozilla/5.0")
-				.get();
-		Element revcount = tmpReviewPage.getElementsByClass("totalReviewCount")
-				.get(0);
-		int totalReviewCount = Integer.parseInt(revcount.text().replaceAll(",",
-				""));
-		System.out.println("レビュー数：" + totalReviewCount);
-		ArrayList<Document> revpagelist = new ArrayList<Document>();
-		// ArrayList<String> customers = new ArrayList<String>();
-		for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
-			revpagelist
-					.add(Jsoup
-							.connect(
-									"http://www.amazon.com/product-reviews/"
-											+ idString
-											+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
-											+ (i + 1)).followRedirects(true)
-							.timeout(0).userAgent("Mozilla/5.0").get());
-			Date date = new Date();
-			listModel.add(0, date.toString() + " レビューページ@アイテム取得中：" + idString + "(" + (i + 1)
-					+ "/" + Math.ceil(totalReviewCount * 0.1) + ")");
-		}
 
 		try {
 			/*
@@ -252,135 +223,169 @@ public class USamazonCrawler extends Thread {
 				redun = true;
 			}
 
+			// idがitem_tblに登録されてない時の処理
 			if (redun == false) {
+
+				System.out.println("アイテム：" + idString + "を取得します");
+				Document document1 = Jsoup
+						.connect("http://www.amazon.com/dp/" + idString)
+						.followRedirects(true).timeout(0)
+						.userAgent("Mozilla/5.0").get();
+				Document tmpReviewPage = Jsoup
+						.connect(
+								"http://www.amazon.com/product-reviews/"
+										+ idString
+										+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber=1")
+						.followRedirects(true).timeout(0)
+						.userAgent("Mozilla/5.0").get();
+				Element revcount = tmpReviewPage.getElementsByClass(
+						"totalReviewCount").get(0);
+				int totalReviewCount = Integer.parseInt(revcount.text()
+						.replaceAll(",", ""));
+				System.out.println("レビュー数：" + totalReviewCount);
+				ArrayList<Document> revpagelist = new ArrayList<Document>();
+				// ArrayList<String> customers = new ArrayList<String>();
+				for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
+					revpagelist
+							.add(Jsoup
+									.connect(
+											"http://www.amazon.com/product-reviews/"
+													+ idString
+													+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
+													+ (i + 1))
+									.followRedirects(true).timeout(0)
+									.userAgent("Mozilla/5.0").get());
+					Date date = new Date();
+					listModel.add(
+							0,
+							date.toString() + " レビューページ@アイテム取得中：" + idString
+									+ "(" + (i + 1) + "/"
+									+ Math.ceil(totalReviewCount * 0.1) + ")");
+				}
 
 				Date date = new Date();
 				listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - "
 						+ idString);
 				stmt = con.createStatement();
-				//try {
+				// try {
 
-					String productTitle = document1
-							.getElementById("productTitle").text()
-							.replaceAll("'", "");
+				String productTitle;
+				if (document1.getElementById("productTitle") != null) {
+					productTitle = document1.getElementById("productTitle")
+							.text().replaceAll("'", "");
+				} else {
+					productTitle = document1.getElementById("btAsinTitle")
+							.text().replaceAll("'", "");
 
-					ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
-					
-						Elements breadcrumbs = document1.getElementById(
-								"wayfinding-breadcrumbs_feature_div")
-								.getElementsByTag("li");
-						for (Element elem : breadcrumbs) {
-							String tmp = elem.text();
-							if (tmp.trim().equals("›") == false) {
-								cats.add(tmp.trim());
-							}
-						}
-
-
-					System.out.println(cats.toString());
-				/*
-					String entrydate = "'0'";
-					try {
-
-						if (document1
-								.getElementsByClass("date-first-available")
-								.isEmpty() == false) {
-							entrydate = document1
-									.getElementsByClass("date-first-available")
-									.first().children().last().text(); // 登録日
-						} else {
-							String chikanmoto = document1
-									.getElementsByClass("content").last()
-									.getElementsByTag("li").last().html();
-							Pattern p3 = Pattern.compile("<b>.*</b>");
-							Matcher m3 = p3.matcher(chikanmoto);
-							entrydate = m3.replaceAll("");
-							if (entrydate.length() > 20) {
-								entrydate = "'0'";
-							}
-						}
-					} catch (NullPointerException e) {
-						// TODO: handle exception
-					}
-					*/
-
-					switch (cats.size()) {
-					case 0:
-						sql = "INSERT INTO item_tbl (asin,producttitle) VALUES ('"
-								+ idString + "',E'" + productTitle + "');";
-						break;
-					case 1:
-						sql = "INSERT INTO item_tbl (asin,cat1,producttitle) VALUES ('"
-								+ idString
-								+ "','"
-								+ cats.get(0)
-								+ "',E'"
-								+ productTitle + "');";
-						break;
-
-					case 2:
-						sql = "INSERT INTO item_tbl (asin,cat1,cat2,producttitle) VALUES ('"
-								+ idString
-								+ "','"
-								+ cats.get(0)
-								+ "','"
-								+ cats.get(1) + "',E'" + productTitle + "');";
-						break;
-
-					case 3:
-						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,producttitle) VALUES ('"
-								+ idString
-								+ "','"
-								+ cats.get(0)
-								+ "','"
-								+ cats.get(1)
-								+ "','"
-								+ cats.get(2)
-								+ "',E'"
-								+ productTitle + "');";
-						break;
-					case 4:
-						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,producttitle) VALUES ('"
-								+ idString
-								+ "','"
-								+ cats.get(0)
-								+ "','"
-								+ cats.get(1)
-								+ "','"
-								+ cats.get(2)
-								+ "','"
-								+ cats.get(3) + "',E'"
-
-								+ productTitle + "');";
-						break;
-					default:
-						sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,cat5,producttitle) VALUES ('"
-								+ idString
-								+ "','"
-								+ cats.get(0)
-								+ "','"
-								+ cats.get(1)
-								+ "','"
-								+ cats.get(2)
-								+ "','"
-								+ cats.get(3)
-								+ "','"
-								+ cats.get(4)
-								+ "',E'"
-								+ productTitle + "');";
-						break;
-					/*
-					 * default: sql = "";
-					 * System.err.println("実行を想定していない箇所が実行されました！"); break;
-					 */
-					}
-					/*
-				} catch (NullPointerException e) {
-					// TODO: handle exception
-					sql = "INSERT INTO item_tbl (asin) VALUES ('" + idString
-							+ "');";
 				}
-				*/
+
+				ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
+
+				Elements breadcrumbs = new Elements();
+				try {
+				breadcrumbs = document1.getElementById(
+						"wayfinding-breadcrumbs_feature_div").getElementsByTag(
+						"li");
+				} catch( NullPointerException e) {} 
+				
+				for (Element elem : breadcrumbs) {
+					String tmp = elem.text();
+					if (tmp.trim().equals("›") == false) {
+						cats.add(tmp.trim());
+					}
+				}
+
+				System.out.println(cats.toString());
+				/*
+				 * String entrydate = "'0'"; try {
+				 * 
+				 * if (document1 .getElementsByClass("date-first-available")
+				 * .isEmpty() == false) { entrydate = document1
+				 * .getElementsByClass("date-first-available")
+				 * .first().children().last().text(); // 登録日 } else { String
+				 * chikanmoto = document1 .getElementsByClass("content").last()
+				 * .getElementsByTag("li").last().html(); Pattern p3 =
+				 * Pattern.compile("<b>.*</b>"); Matcher m3 =
+				 * p3.matcher(chikanmoto); entrydate = m3.replaceAll(""); if
+				 * (entrydate.length() > 20) { entrydate = "'0'"; } } } catch
+				 * (NullPointerException e) { // TODO: handle exception }
+				 */
+
+				switch (cats.size()) {
+				case 0:
+					sql = "INSERT INTO item_tbl (asin,producttitle) VALUES ('"
+							+ idString + "',E'" + productTitle + "');";
+					break;
+				case 1:
+					sql = "INSERT INTO item_tbl (asin,cat1,producttitle) VALUES ('"
+							+ idString
+							+ "','"
+							+ cats.get(0)
+							+ "',E'"
+							+ productTitle + "');";
+					break;
+
+				case 2:
+					sql = "INSERT INTO item_tbl (asin,cat1,cat2,producttitle) VALUES ('"
+							+ idString
+							+ "','"
+							+ cats.get(0)
+							+ "','"
+							+ cats.get(1) + "',E'" + productTitle + "');";
+					break;
+
+				case 3:
+					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,producttitle) VALUES ('"
+							+ idString
+							+ "','"
+							+ cats.get(0)
+							+ "','"
+							+ cats.get(1)
+							+ "','"
+							+ cats.get(2)
+							+ "',E'"
+							+ productTitle + "');";
+					break;
+				case 4:
+					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,producttitle) VALUES ('"
+							+ idString
+							+ "','"
+							+ cats.get(0)
+							+ "','"
+							+ cats.get(1)
+							+ "','"
+							+ cats.get(2)
+							+ "','"
+							+ cats.get(3) + "',E'"
+
+							+ productTitle + "');";
+					break;
+				default:
+					sql = "INSERT INTO item_tbl (asin,cat1,cat2,cat3,cat4,cat5,producttitle) VALUES ('"
+							+ idString
+							+ "','"
+							+ cats.get(0)
+							+ "','"
+							+ cats.get(1)
+							+ "','"
+							+ cats.get(2)
+							+ "','"
+							+ cats.get(3)
+							+ "','"
+							+ cats.get(4)
+							+ "',E'"
+							+ productTitle + "');";
+					break;
+				/*
+				 * default: sql = "";
+				 * System.err.println("実行を想定していない箇所が実行されました！"); break;
+				 */
+				}
+				/*
+				 * } catch (NullPointerException e) { // TODO: handle exception
+				 * sql = "INSERT INTO item_tbl (asin) VALUES ('" + idString +
+				 * "');"; }
+				 */
 
 				int kekka = stmt.executeUpdate(sql);
 
@@ -394,9 +399,8 @@ public class USamazonCrawler extends Thread {
 									.text().charAt(0)); // 星の数
 							String customer;
 							try {
-								customer = element
-										.getElementsByClass("author").get(0)
-										.attr("href").split("/")[4]; // 投稿者ID
+								customer = element.getElementsByClass("author")
+										.get(0).attr("href").split("/")[4]; // 投稿者ID
 							} catch (NullPointerException e) {
 								// TODO: handle exception
 								continue;
@@ -404,7 +408,7 @@ public class USamazonCrawler extends Thread {
 								// TODO: handle exception
 								continue;
 							}
-							
+
 							String reviewid = element.attr("id"); // レビューID
 							String reviewdate = element
 									.getElementsByClass("review-date").get(0)
@@ -414,6 +418,7 @@ public class USamazonCrawler extends Thread {
 									.getElementsByClass("helpful-votes-count")
 									.get(0).text();
 
+							date = new Date();
 							listModel.add(0, date.toString()
 									+ "Amazon.comから取得:レビュー - " + reviewid);
 							int helpful = 0;
@@ -499,10 +504,13 @@ public class USamazonCrawler extends Thread {
 			e.printStackTrace();
 		} catch (NullPointerException e) {
 			// TODO: handle exception
+			System.err.println("ヌルポでした in saveItem");
+			e.printStackTrace();
 		}
 	}
 
-	private void saveCustom(String idString) throws IOException, NullPointerException , IndexOutOfBoundsException {
+	private void saveCustom(String idString) throws IOException,
+			NullPointerException, IndexOutOfBoundsException {
 		System.out.println("カスタマー：" + idString + "を取得します");
 		// 重複確認
 		Boolean redun3 = false;
@@ -540,7 +548,8 @@ public class USamazonCrawler extends Thread {
 				int reviewCount = Integer.parseInt(m.group()); // レビュー数
 				System.out.println("レビュー数：" + reviewCount);
 
-				//System.out.println("span first：" + tmppage/*.getElementsByClass("first")*/.toString());
+				// System.out.println("span first：" +
+				// tmppage/*.getElementsByClass("first")*/.toString());
 				String cus_name = tmppage.getElementsByClass("first").first()
 						.text();
 				System.out.println("名前が含まれているはずの文字列：" + cus_name);
@@ -570,10 +579,12 @@ public class USamazonCrawler extends Thread {
 											+ "&sort_by=MostRecentReview")
 							.followRedirects(true).timeout(0)
 							.userAgent("Mozilla/5.0").get());
-					 date = new Date();
-					listModel.add(0, date.toString() + " レビューページ@カスタマー取得中：" + idString + "("
-							+ (i + 1) + "/" + Math.ceil(reviewCount * 0.1)
-							+ ")");
+					date = new Date();
+					listModel.add(
+							0,
+							date.toString() + " レビューページ@カスタマー取得中：" + idString
+									+ "(" + (i + 1) + "/"
+									+ Math.ceil(reviewCount * 0.1) + ")");
 				}
 
 				// レビューページから商品の一覧を取得
@@ -596,12 +607,13 @@ public class USamazonCrawler extends Thread {
 								// →abc123def456ghi
 								// System.out.println(m.groupCount()); // →3
 
-								//すでに抽出したアイテムとの重複確認
+								// すでに抽出したアイテムとの重複確認
 								if (strMatch(itemList, m1.group(1)) == false) {
 									System.out.println("アイテム：" + m1.group(1));
 									itemList.add(m1.group(1));
-									 date = new Date();
-									listModel.add(0, date.toString() + " アイテム抽出：" + m1.group(1));
+									date = new Date();
+									listModel.add(0, date.toString()
+											+ " アイテム抽出：" + m1.group(1));
 
 									try {
 										// データベースとの接続
