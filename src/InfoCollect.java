@@ -1,4 +1,5 @@
 import java.awt.EventQueue;
+import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 import javax.swing.JButton;
@@ -63,6 +64,8 @@ public class InfoCollect {
 		frame.setBounds(100, 100, 695, 469);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
+		
+		frame.setIconImage(Toolkit.getDefaultToolkit().getImage("img/icon.png"));
 		
 		btnStart = new JButton("開始");
 		btnStart.addActionListener(new ActionListener() {

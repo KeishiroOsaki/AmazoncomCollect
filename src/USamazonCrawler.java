@@ -506,6 +506,7 @@ public class USamazonCrawler extends Thread {
 			// TODO: handle exception
 			System.err.println("ヌルポでした in saveItem");
 			e.printStackTrace();
+			throw e;
 		}
 	}
 

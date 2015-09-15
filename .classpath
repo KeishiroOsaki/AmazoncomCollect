@@ -8,5 +8,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="libs/postgresql-9.2-1004.jdbc41.jar"/>
+	<classpathentry kind="lib" path="img"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
