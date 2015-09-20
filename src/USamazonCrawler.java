@@ -273,10 +273,13 @@ public class USamazonCrawler extends Thread {
 				if (document1.getElementById("productTitle") != null) {
 					productTitle = document1.getElementById("productTitle")
 							.text().replaceAll("'", "");
-				} else {
+				} else if (document1.getElementById("aiv-content-title") != null) {
+					productTitle = document1.getElementById("aiv-content-title").text().replaceAll("'", "");
+				} else if (document1.getElementById("btAsinTitle") != null) {
 					productTitle = document1.getElementById("btAsinTitle")
 							.text().replaceAll("'", "");
-
+				} else {
+					productTitle = tmpReviewPage.getElementsByClass("a-text-ellipsis").first().text().replaceAll("'", "");
 				}
 
 				ArrayList<String> cats = new ArrayList<String>(); // カテゴリー群
