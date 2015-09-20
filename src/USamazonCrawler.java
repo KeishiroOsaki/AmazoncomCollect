@@ -245,23 +245,7 @@ public class USamazonCrawler extends Thread {
 				System.out.println("レビュー数：" + totalReviewCount);
 				ArrayList<Document> revpagelist = new ArrayList<Document>();
 				// ArrayList<String> customers = new ArrayList<String>();
-				for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
-					revpagelist
-							.add(Jsoup
-									.connect(
-											"http://www.amazon.com/product-reviews/"
-													+ idString
-													+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
-													+ (i + 1))
-									.followRedirects(true).timeout(0)
-									.userAgent("Mozilla/5.0").get());
-					Date date = new Date();
-					listModel.add(
-							0,
-							date.toString() + " レビューページ@アイテム取得中：" + idString
-									+ "(" + (i + 1) + "/"
-									+ Math.ceil(totalReviewCount * 0.1) + ")");
-				}
+
 
 				Date date = new Date();
 				listModel.add(0, date.toString() + "Amazon.comから取得:アイテム - "
@@ -392,9 +376,28 @@ public class USamazonCrawler extends Thread {
 
 				int kekka = stmt.executeUpdate(sql);
 
+				for (int i = 0; i < Math.ceil(totalReviewCount * 0.1); i++) {
+					//revpagelist
+							//.add(
+					Document revpage_t=Jsoup
+									.connect(
+											"http://www.amazon.com/product-reviews/"
+													+ idString
+													+ "/ref=cm_cr_pr_viewopt_srt?ie=UTF8&showViewpoints=1&sortBy=recent&reviewerType=all_reviews&formatType=all_formats&filterByStar=all_stars&pageNumber="
+													+ (i + 1))
+									.followRedirects(true).timeout(0)
+									.userAgent("Mozilla/5.0").get();
+					date = new Date();
+					listModel.add(
+							0,
+							date.toString() + " レビューページ@アイテム取得中：" + idString
+									+ "(" + (i + 1) + "/"
+									+ Math.ceil(totalReviewCount * 0.1) + ")");
+				/*}
+				
 				for (Document d : revpagelist) {
-
-					Elements tmpElements = d.getElementsByClass("review");
+				*/
+					Elements tmpElements = revpage_t.getElementsByClass("review");
 					for (Element element : tmpElements) {
 						try {
 							int rating = Character.getNumericValue(element
