@@ -9,15 +9,15 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 //import javax.lang.model.util.Elements;
 import javax.swing.DefaultListModel;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class USamazonCrawler extends Thread {
 	private int signal = 0;
@@ -273,8 +273,8 @@ public class USamazonCrawler extends Thread {
 				breadcrumbs = document1.getElementById(
 						"wayfinding-breadcrumbs_feature_div").getElementsByTag(
 						"li");
-				} catch( NullPointerException e) {} 
-				
+				} catch( NullPointerException e) {}
+
 				for (Element elem : breadcrumbs) {
 					String tmp = elem.text();
 					if (tmp.trim().equals("›") == false) {
@@ -285,7 +285,7 @@ public class USamazonCrawler extends Thread {
 				System.out.println(cats.toString());
 				/*
 				 * String entrydate = "'0'"; try {
-				 * 
+				 *
 				 * if (document1 .getElementsByClass("date-first-available")
 				 * .isEmpty() == false) { entrydate = document1
 				 * .getElementsByClass("date-first-available")
@@ -394,7 +394,7 @@ public class USamazonCrawler extends Thread {
 									+ "(" + (i + 1) + "/"
 									+ Math.ceil(totalReviewCount * 0.1) + ")");
 				/*}
-				
+
 				for (Document d : revpagelist) {
 				*/
 					Elements tmpElements = revpage_t.getElementsByClass("review");
