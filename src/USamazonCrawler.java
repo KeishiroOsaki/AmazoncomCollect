@@ -46,7 +46,7 @@ public class USamazonCrawler extends Thread {
 		dbname = "db_usamazon";
 		url = "jdbc:postgresql://" + server + "/" + dbname;
 		user = "postgres";
-		password = "wth050527";
+		password = "*******";
 		try {
 			Class.forName(driver);
 		} catch (ClassNotFoundException e) {
